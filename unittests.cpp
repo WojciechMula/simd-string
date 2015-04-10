@@ -16,10 +16,20 @@ class UnitTests final {
 public:
     bool run_all() {
 
-        printf("test_strlen: ");
+        printf("test strlen SSE4.1: ");
         fflush(stdout);
 
-        if (test_strlen()) {
+        if (test_strlen(sse41_strlen)) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+
+        printf("test strlen SSE4.2: ");
+        fflush(stdout);
+
+        if (test_strlen(sse42_strlen)) {
             print_ok();
         } else {
             print_fail();
@@ -44,8 +54,9 @@ private:
     }
 
 private:
-    bool test_strlen() {
-        
+    template <typename T>
+    bool test_strlen(T simd_strlen) {
+
         const size_t size = 1024;
 
         std::unique_ptr<char> b(new char[1023]);
@@ -60,7 +71,7 @@ private:
             buffer[i] = 0;
 
             const auto expected = strlen(buffer);
-            const auto actual   = sse41_strlen(buffer);
+            const auto actual   = simd_strlen(buffer);
 
             if (expected != actual) {
                 printf("failed: %lu != %lu\n", expected, actual);
