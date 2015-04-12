@@ -12,6 +12,7 @@
 #include "strchr.cpp"
 #include "strrchr.cpp"
 #include "is_xdigit.cpp"
+#include "strtolower.cpp"
 
 // --------------------------------------------------
 
@@ -75,6 +76,16 @@ public:
         fflush(stdout);
 
         if (test_is_xdigit()) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+
+        printf("test change_case SSE4.2: ");
+        fflush(stdout);
+
+        if (test_change_case()) {
             print_ok();
         } else {
             print_fail();
@@ -314,6 +325,57 @@ private:
         for (const auto& item: fixtures) {
             if (sse42_is_xdigit(item.c_str()) != item.expected) {
                 printf("failed for '%s'\n", item.c_str());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    bool test_change_case() {
+
+        struct fixture {
+            std::string str;
+            std::string lower;
+            std::string upper;
+            std::string swapped;
+        };
+
+        std::vector<fixture> fixtures = {
+            {"01234", "01234", "01234", "01234"},
+            {"HaXoR", "haxor", "HAXOR", "hAxOr"},
+            {"The number is 42!", "the number is 42!", "THE NUMBER IS 42!", "tHE NUMBER IS 42!"},
+        };
+
+        char buffer[256];
+
+        for (const auto& item: fixtures) {
+            
+            memset(buffer, 'x', sizeof(buffer));
+            memcpy(buffer, item.str.c_str(), item.str.size() + 1);
+
+            sse4_strcase(buffer, strcase_mode::to_lower);
+            if (std::string(buffer) != item.lower) {
+                printf("failed for to_lower '%s'\n", buffer);
+                return false;
+            }
+            
+            memset(buffer, 'x', sizeof(buffer));
+            memcpy(buffer, item.str.c_str(), item.str.size() + 1);
+
+            sse4_strcase(buffer, strcase_mode::to_upper);
+            if (std::string(buffer) != item.upper) {
+                printf("failed for to_upper '%s'\n", buffer);
+                return false;
+            }
+            
+            memset(buffer, 'x', sizeof(buffer));
+            memcpy(buffer, item.str.c_str(), item.str.size() + 1);
+
+            sse4_strcase(buffer, strcase_mode::swap_case);
+            if (std::string(buffer) != item.swapped) {
+                printf("failed for swap_case '%s'\n", buffer);
                 return false;
             }
         }
