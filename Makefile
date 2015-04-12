@@ -1,6 +1,6 @@
 CC=g++
 FLAGS=-O2 -Wall -Wextra -pedantic -std=c++11 -msse4
-DEPS=strlen.cpp strcmp.cpp
+DEPS=strlen.cpp strcmp.cpp strchr.cpp
 ALL=unittests
 
 unittests: unittests.cpp $(DEPS)

@@ -8,6 +8,7 @@
 #include "bits.cpp"
 #include "strlen.cpp"
 #include "strcmp.cpp"
+#include "strchr.cpp"
 
 // --------------------------------------------------
 
@@ -41,6 +42,16 @@ public:
         fflush(stdout);
 
         if (test_strcmp(sse42_strcmp)) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+
+        printf("test strchr SSE4.2: ");
+        fflush(stdout);
+
+        if (test_strchr()) {
             print_ok();
         } else {
             print_fail();
@@ -168,6 +179,46 @@ private:
             if (!same_result(expected, actual)) {
                 printf("failed: %d != %d\n", expected, actual);
                 return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    bool test_strchr() {
+
+        const size_t size = 1024;
+
+        std::unique_ptr<char> b(new char[size+1]);
+        char* buffer = b.get();
+
+        for (size_t i=0; i < size; i++) {
+            for (size_t j=i; j < size; j++) {
+
+                memset(buffer, 'x', size);
+                buffer[i] = 'y';
+                buffer[j] = 0;
+
+                {
+                    const auto expected = strchr(buffer, 'y');
+                    const auto actual   = sse42_strchr(buffer, 'y');
+
+                    if (expected != actual) {
+                        printf("failed2: %p != %p\n", expected, actual);
+                        return false;
+                    }
+                }
+
+                {
+                    const auto expected = strchr(buffer, '!');
+                    const auto actual   = sse42_strchr(buffer, '!');
+
+                    if (expected != actual) {
+                        printf("failed1: %p != %p\n", expected, actual);
+                        return false;
+                    }
+                }
             }
         }
 

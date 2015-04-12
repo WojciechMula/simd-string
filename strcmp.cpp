@@ -25,8 +25,6 @@ int sse42_strcmp(const char* s1, const char* s2) {
             const uint8_t b1 = (reinterpret_cast<char*>(ptr1))[idx];
             const uint8_t b2 = (reinterpret_cast<char*>(ptr2))[idx];
 
-            //printf("%d, %d, %d\n", idx, b1, b2);
-
             if (b1 < b2) {
                 return -1;
             } else if (b1 > b2) {
