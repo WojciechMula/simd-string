@@ -9,6 +9,7 @@
 #include "strlen.cpp"
 #include "strcmp.cpp"
 #include "strchr.cpp"
+#include "strrchr.cpp"
 
 // --------------------------------------------------
 
@@ -18,6 +19,7 @@ class UnitTests final {
 public:
     bool run_all() {
 
+#if 0
         printf("test strlen SSE4.1: ");
         fflush(stdout);
 
@@ -52,6 +54,17 @@ public:
         fflush(stdout);
 
         if (test_strchr()) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+#endif
+
+        printf("test strrchr SSE4.2: ");
+        fflush(stdout);
+
+        if (test_strrchr()) {
             print_ok();
         } else {
             print_fail();
@@ -213,6 +226,47 @@ private:
                 {
                     const auto expected = strchr(buffer, '!');
                     const auto actual   = sse42_strchr(buffer, '!');
+
+                    if (expected != actual) {
+                        printf("failed1: %p != %p\n", expected, actual);
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    bool test_strrchr() {
+
+        const size_t size = 1024;
+
+        std::unique_ptr<char> b(new char[size+1]);
+        char* buffer = b.get();
+
+        for (size_t i=0; i < size; i++) {
+            for (size_t j=i; j < size - 1; j++) {
+
+                memset(buffer, 'x', size);
+                buffer[i] = 'y';
+                buffer[j] = 'y';
+                buffer[j + 1] = 0;
+
+                {
+                    const auto expected = strrchr(buffer, 'y');
+                    const auto actual   = sse42_strrchr(buffer, 'y');
+
+                    if (expected != actual) {
+                        printf("failed2: %p != %p\n", expected, actual);
+                        return false;
+                    }
+                }
+
+                {
+                    const auto expected = strrchr(buffer, '!');
+                    const auto actual   = sse42_strrchr(buffer, '!');
 
                     if (expected != actual) {
                         printf("failed1: %p != %p\n", expected, actual);
