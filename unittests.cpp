@@ -7,6 +7,7 @@
 #include "headers.h"
 #include "bits.cpp"
 #include "strlen.cpp"
+#include "strcmp.cpp"
 
 // --------------------------------------------------
 
@@ -36,6 +37,16 @@ public:
             return false;
         }
 
+        printf("test strcmp SSE4.2: ");
+        fflush(stdout);
+
+        if (test_strcmp(sse42_strcmp)) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+
         return true;
     }
 
@@ -59,7 +70,7 @@ private:
 
         const size_t size = 1024;
 
-        std::unique_ptr<char> b(new char[1023]);
+        std::unique_ptr<char> b(new char[size+1]);
         char* buffer = b.get();
 
         for (size_t i=0; i < size; i++) {
@@ -75,6 +86,87 @@ private:
 
             if (expected != actual) {
                 printf("failed: %lu != %lu\n", expected, actual);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template <typename T>
+    bool test_strcmp(T simd_strcmp) {
+
+        const size_t size = 1024;
+
+        std::unique_ptr<char> A(new char[size+1]);
+        std::unique_ptr<char> B(new char[size+1]);
+        char* a = A.get();
+        char* b = B.get();
+
+        for (size_t i=0; i < size; i++) {
+            a[i] = 'x';
+            b[i] = 'x';
+        }
+
+        a[size] = 0;
+
+        auto same_result = [](int a, int b) -> bool {
+            if (a == 0 && b == 0) {
+                return true;
+            }
+
+            if ((a > 0 && b > 0) || (a < 0 && b < 0)) {
+                return true;
+            }
+
+            return false;
+        };
+
+        // 1. different strings
+
+        for (unsigned i = 0; i < size; i++) {
+            for (unsigned j = i + 1; j < size; j++) {
+
+                memcpy(a, b, size);
+
+                a[i] = 'y';
+                a[j] = 0;
+
+                const auto expected1 = strcmp(a, b);
+                const auto actual1   = simd_strcmp(a, b);
+
+                if (!same_result(expected1, actual1)) {
+                    printf("failed: %d != %d\n", expected1, actual1);
+                    return false;
+                }
+
+                const auto expected2 = strcmp(b, a);
+                const auto actual2   = simd_strcmp(b, a);
+
+                if (!same_result(expected2, actual2)) {
+                    printf("failed: %d != %d\n", expected2, actual2);
+                    return false;
+                }
+            }
+        }
+
+        // 2. same strings
+
+        for (unsigned i = 0; i < size; i++) {
+
+            if (i > 0) {
+                b[i - 1] = 'x';
+            }
+
+            b[i] = 0;
+
+            memcpy(a, b, i+1);
+
+            const auto expected = strcmp(a, b);
+            const auto actual   = simd_strcmp(a, b);
+
+            if (!same_result(expected, actual)) {
+                printf("failed: %d != %d\n", expected, actual);
                 return false;
             }
         }
