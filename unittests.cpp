@@ -13,6 +13,7 @@
 #include "strrchr.cpp"
 #include "is_xdigit.cpp"
 #include "strtolower.cpp"
+#include "memcmp.cpp"
 
 // --------------------------------------------------
 
@@ -86,6 +87,16 @@ public:
         fflush(stdout);
 
         if (test_change_case()) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+
+        printf("test memcmp SSE4.2: ");
+        fflush(stdout);
+
+        if (test_memcmp()) {
             print_ok();
         } else {
             print_fail();
@@ -376,6 +387,62 @@ private:
             sse4_strcase(buffer, strcase_mode::swap_case);
             if (std::string(buffer) != item.swapped) {
                 printf("failed for swap_case '%s'\n", buffer);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    bool test_memcmp() {
+
+        const size_t size = 1024;
+
+        char a[size];
+        char b[size];
+
+        memset(a, 'x', sizeof(a));
+
+        auto same_result = [](int a, int b) -> bool {
+            if (a == 0 && b == 0) {
+                return true;
+            }
+
+            if ((a > 0 && b > 0) || (a < 0 && b < 0)) {
+                return true;
+            }
+
+            return false;
+        };
+
+
+        for (size_t i=0; i < size; i++) {
+            
+            memcpy(b, a, size);
+            b[i] = 'y';
+
+            for (size_t j=0; j < size; j++) {
+
+                const auto expected = memcmp(a, b, j);
+                const auto actual   = sse42_memcmp(a, b, j);
+
+                if (!same_result(expected, actual)) {
+                    return false;
+                }
+            }
+        }
+
+
+        memset(a, 'x', size);
+        memset(b, 'x', size);
+
+        for (size_t i=0; i < size; i++) {
+            
+            const auto expected = memcmp(a, b, i);
+            const auto actual   = sse42_memcmp(a, b, i);
+
+            if (!same_result(expected, actual)) {
                 return false;
             }
         }
