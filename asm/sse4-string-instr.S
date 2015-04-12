@@ -5,7 +5,7 @@
       * strchr [2007-09-02] (implict string length)
       * strchr2 [2007-09-08] (explicit string length)
       * strrchr [2007-09-02]
-      * is_sxdigit [2007-09-02] -- validate string
+      * is_xdigit [2007-09-02] -- validate string
       * strtolower [2007-09-02] -- change case of ASCII encoded string
 
     Warning: these functions were not tested yet!
@@ -346,7 +346,7 @@ strrchr:
 
 #undef L
 #define L(name) .L_e##name
-/* int is_sxdigit(const char* s);
+/* int is_xdigit(const char* s);
 
    comment:
      Function test if all chars from s matches [0-9A-Fa-f]
@@ -361,7 +361,7 @@ strrchr:
    destroy:
    - %xmm0, %xmm1
  */
-is_sxdigit:
+is_xdigit:
         imm8 = SSESTR_PACKED_UBYTE  | \
                SSESTR_RANGES        | \
                SSESTR_NEGATED_VALID | \

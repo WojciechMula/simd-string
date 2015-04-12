@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 #include <memory>
 
 // --------------------------------------------------
@@ -10,6 +11,7 @@
 #include "strcmp.cpp"
 #include "strchr.cpp"
 #include "strrchr.cpp"
+#include "is_xdigit.cpp"
 
 // --------------------------------------------------
 
@@ -19,7 +21,6 @@ class UnitTests final {
 public:
     bool run_all() {
 
-#if 0
         printf("test strlen SSE4.1: ");
         fflush(stdout);
 
@@ -59,12 +60,21 @@ public:
             print_fail();
             return false;
         }
-#endif
 
         printf("test strrchr SSE4.2: ");
         fflush(stdout);
 
         if (test_strrchr()) {
+            print_ok();
+        } else {
+            print_fail();
+            return false;
+        }
+
+        printf("test is_xidigt SSE4.2: ");
+        fflush(stdout);
+
+        if (test_is_xdigit()) {
             print_ok();
         } else {
             print_fail();
@@ -273,6 +283,38 @@ private:
                         return false;
                     }
                 }
+            }
+        }
+
+        return true;
+    }
+
+
+    bool test_is_xdigit() {
+
+        struct fixture {
+            std::string string;
+            bool        expected;
+
+            const char* c_str() const {
+                return string.c_str();
+            }
+        };
+
+        std::vector<fixture> fixtures = {
+            {"",                            false},
+            {"cat",                         false},
+            {"42",                          true},
+            {"badcafe",                     true},
+            {"0x80",                        false},
+            {"0123456789abcdefABCDEF",      true},
+            {"nobody expects 42",           false},
+        };
+
+        for (const auto& item: fixtures) {
+            if (sse42_is_xdigit(item.c_str()) != item.expected) {
+                printf("failed for '%s'\n", item.c_str());
+                return false;
             }
         }
 
